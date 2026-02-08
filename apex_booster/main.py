@@ -7,8 +7,12 @@ import subprocess
 import threading
 import time
 import humanize
-import wmi
+import sys
 from PIL import Image
+
+# Constants for Windows API
+CREATE_NO_WINDOW = 0x08000000
+HIGH_PRIORITY_CLASS = 0x00000080
 
 # Configuration
 ctk.set_appearance_mode("Dark")
@@ -89,9 +93,8 @@ class App(ctk.CTk):
         self.console.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
         self.log("Ready to optimize system...")
 
-        # Start background monitoring
-        self.monitor_thread = threading.Thread(target=self.monitor_system, daemon=True)
-        self.monitor_thread.start()
+        # Start monitoring on main thread loop
+        self.update_metrics()
 
     def create_metric_card(self, parent, title, value, row, col):
         frame = ctk.CTkFrame(parent, fg_color=self.secondary_color, corner_radius=15, height=120)
@@ -113,22 +116,23 @@ class App(ctk.CTk):
         self.console.insert("end", f"> {message}\n")
         self.console.see("end")
 
-    def monitor_system(self):
-        while True:
-            try:
-                cpu = psutil.cpu_percent(interval=1)
-                ram = psutil.virtual_memory()
-                
-                self.cpu_label.configure(text=f"{cpu}%")
-                self.ram_label.configure(text=f"{ram.percent}% ({humanize.naturalsize(ram.used)})")
-                
-                # Dynamic color based on load
-                if cpu > 80: self.cpu_label.configure(text_color="#ff4444")
-                else: self.cpu_label.configure(text_color="white")
-                
-            except Exception as e:
-                pass
-            time.sleep(1)
+    def update_metrics(self):
+        try:
+            cpu = psutil.cpu_percent(interval=None) # Non-blocking
+            ram = psutil.virtual_memory()
+            
+            self.cpu_label.configure(text=f"{cpu}%")
+            self.ram_label.configure(text=f"{ram.percent}% ({humanize.naturalsize(ram.used)})")
+            
+            # Dynamic color based on load
+            if cpu > 80: self.cpu_label.configure(text_color="#ff4444")
+            else: self.cpu_label.configure(text_color="white")
+            
+        except Exception as e:
+            pass
+        
+        # Recursively call this function every 1000ms (1 second)
+        self.after(1000, self.update_metrics)
 
     def toggle_boost(self):
         if not self.boost_active:
@@ -167,18 +171,19 @@ class App(ctk.CTk):
         # Continuous optimization loop while boost is active
         while self.boost_active:
             try:
-                # Get Foreground Window PID
-                hwnd = ctypes.windll.user32.GetForegroundWindow()
-                pid = ctypes.c_ulong()
-                ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-                
-                if pid.value > 0:
-                    p = psutil.Process(pid.value)
-                    # Ignore system processes and self
-                    if p.name().lower() not in ["explorer.exe", "searchui.exe", "lockapp.exe", "apex_booster.exe", "taskmgr.exe"]:
-                        if p.nice() != psutil.HIGH_PRIORITY_CLASS:
-                            p.nice(psutil.HIGH_PRIORITY_CLASS)
-                            self.log(f"BOOSTED: {p.name()} -> HIGH PRIORITY")
+                if os.name == 'nt':
+                     # Get Foreground Window PID
+                    hwnd = ctypes.windll.user32.GetForegroundWindow()
+                    pid = ctypes.c_ulong()
+                    ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                    
+                    if pid.value > 0:
+                        p = psutil.Process(pid.value)
+                        # Ignore system processes and self
+                        if p.name().lower() not in ["explorer.exe", "searchui.exe", "lockapp.exe", "apex_booster.exe", "taskmgr.exe", "python.exe"]:
+                            if p.nice() != HIGH_PRIORITY_CLASS:
+                                p.nice(HIGH_PRIORITY_CLASS)
+                                self.log(f"BOOSTED: {p.name()} -> HIGH PRIORITY")
             except Exception:
                 pass
             time.sleep(5) # Check every 5 seconds
@@ -188,47 +193,34 @@ class App(ctk.CTk):
         try:
             # Clear standby list requires admin and specific API calls usually done by C++ tools like EmptyStandbyList.exe
             # We will use a safe method: EmptyWorkingSet for all user processes we can access
-            proc_count = 0
-            for proc in psutil.process_iter():
+            if os.name == 'nt':
+                # Simple EmptyWorkingSet for self to demonstrate
+                PID = os.getpid()
                 try:
-                    p = psutil.Process(proc.pid)
-                    # Windows API to empty working set
-                    # ctypes.windll.psapi.EmptyWorkingSet(ctypes.c_void_p(p.pid)) # This is pseudo-code for the C call
-                    # Actual implementation requires handle
-                    
-                    if p.name() not in ["python.exe", "apex_booster.exe"]: # Don't kill self
-                         memory_usage = p.memory_info().rss
-                         # We can't actually empty working set easily without admin and extensive ctypes handles
-                         # But we can compact our own and suggest system file cache clearing
-                         pass
-                except:
-                    pass
-            
-            # Simple EmptyWorkingSet for self to demonstrate
-            PID = os.getpid()
-            try:
-                handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, PID)
-                ctypes.windll.psapi.EmptyWorkingSet(handle)
-                ctypes.windll.kernel32.CloseHandle(handle)
-                self.log("Self-optimization successful.")
-            except Exception as e:
-                self.log(f"RAM Cleaner Error: {e}")
+                    handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, PID)
+                    ctypes.windll.psapi.EmptyWorkingSet(handle)
+                    ctypes.windll.kernel32.CloseHandle(handle)
+                    self.log("Self-optimization successful.")
+                except Exception as e:
+                    self.log(f"RAM Cleaner Error: {e}")
 
         except Exception as e:
             self.log(f"Error cleaning RAM: {e}")
 
     def optimize_network(self):
         try:
-            subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-            self.log("DNS Cache Flushed.")
+            if os.name == 'nt':
+                subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
+                self.log("DNS Cache Flushed.")
         except Exception as e:
             self.log(f"Network Error: {e}")
 
     def set_power_plan(self):
         try:
-            # High Performance GUID
-            subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-            self.log("Power Plan set to High Performance.")
+            if os.name == 'nt':
+                # High Performance GUID
+                subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
+                self.log("Power Plan set to High Performance.")
         except Exception as e:
             self.log(f"Power Plan Error: {e}")
 
