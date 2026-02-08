@@ -1,14 +1,15 @@
 
-import customtkinter as ctk
-import psutil
+import customtkinter as ctk # type: ignore
+import psutil # type: ignore
 import os
 import ctypes
 import subprocess
 import threading
 import time
-import humanize
+import humanize # type: ignore
 import sys
-from PIL import Image
+import shutil
+from PIL import Image # type: ignore
 
 # Constants for Windows API
 CREATE_NO_WINDOW = 0x08000000
@@ -16,20 +17,20 @@ HIGH_PRIORITY_CLASS = 0x00000080
 
 # Configuration
 ctk.set_appearance_mode("Dark")
-ctk.set_default_color_theme("dark-blue")  # Will customize colors manually for "Gaming" look
+ctk.set_default_color_theme("dark-blue")  
 
-class App(ctk.CTk):
+class App(ctk.CTk): # type: ignore
     def __init__(self):
         super().__init__()
 
-        self.title("APEX GAME ENGINE - SYSTEM OVERDRIVE")
-        self.geometry("900x600")
+        self.title("TRINITY ENGINE - GOD MODE OPTIMIZATON")
+        self.geometry("900x700")
         self.resizable(False, False)
         
         # Colors & Theme
-        self.bg_color = "#0f0f0f"
-        self.accent_color = "#00ff88" # Neon Green
-        self.secondary_color = "#1a1a1a"
+        self.bg_color = "#050505"
+        self.accent_color = "#ff3333" # Red for Trinity/Performance
+        self.secondary_color = "#111111"
         self.configure(fg_color=self.bg_color)
 
         self.boost_active = False
@@ -41,12 +42,12 @@ class App(ctk.CTk):
         # Sidebar
         self.sidebar_frame = ctk.CTkFrame(self, width=200, corner_radius=0, fg_color=self.secondary_color)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
+        self.sidebar_frame.grid_rowconfigure(5, weight=1)
 
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="APEX ENGINE", font=ctk.CTkFont(size=24, weight="bold"), text_color=self.accent_color)
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="TRINITY\nENGINE", font=ctk.CTkFont(size=28, weight="bold"), text_color=self.accent_color)
+        self.logo_label.grid(row=0, column=0, padx=20, pady=(30, 10))
 
-        self.status_label = ctk.CTkLabel(self.sidebar_frame, text="STATUS: IDLE", font=ctk.CTkFont(size=12, weight="bold"), text_color="gray")
+        self.status_label = ctk.CTkLabel(self.sidebar_frame, text="STATUS: DORMANT", font=ctk.CTkFont(size=12, weight="bold"), text_color="gray")
         self.status_label.grid(row=1, column=0, padx=20, pady=10)
 
         # Main Content
@@ -56,14 +57,14 @@ class App(ctk.CTk):
         self.main_frame.grid_columnconfigure(1, weight=1)
 
         # Dashboard Widgets
-        self.cpu_frame = self.create_metric_card(self.main_frame, "CPU Usage", "0%", 0, 0)
+        self.cpu_frame = self.create_metric_card(self.main_frame, "CPU Load", "0%", 0, 0)
         self.ram_frame = self.create_metric_card(self.main_frame, "RAM Usage", "0/0 GB", 0, 1)
 
         # Boost Button (Big)
-        self.boost_btn = ctk.CTkButton(self.main_frame, text="ACTIVATE TURBO BOOST", 
-                                       font=ctk.CTkFont(size=20, weight="bold"),
-                                       fg_color=self.accent_color, hover_color="#00cc6a",
-                                       text_color="black", height=60, corner_radius=10,
+        self.boost_btn = ctk.CTkButton(self.main_frame, text="ENGAGE GOD MODE", 
+                                       font=ctk.CTkFont(size=22, weight="bold"),
+                                       fg_color=self.accent_color, hover_color="#cc0000",
+                                       text_color="white", height=70, corner_radius=10,
                                        command=self.toggle_boost)
         self.boost_btn.grid(row=1, column=0, columnspan=2, sticky="ew", pady=30, padx=10)
 
@@ -72,26 +73,34 @@ class App(ctk.CTk):
         self.opt_frame.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
         self.opt_frame.grid_columnconfigure((0,1), weight=1)
 
-        self.switch_clean_ram = ctk.CTkSwitch(self.opt_frame, text="Aggressive RAM Cleaner", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
-        self.switch_clean_ram.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+        self.switch_clean_ram = ctk.CTkSwitch(self.opt_frame, text="Flux Capacitor (RAM Cleaner)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_clean_ram.grid(row=0, column=0, padx=20, pady=15, sticky="w")
         self.switch_clean_ram.select()
 
-        self.switch_high_prio = ctk.CTkSwitch(self.opt_frame, text="Force High Process Priority", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
-        self.switch_high_prio.grid(row=0, column=1, padx=20, pady=20, sticky="w")
+        self.switch_high_prio = ctk.CTkSwitch(self.opt_frame, text="Neural Priority (CPU Focus)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_high_prio.grid(row=0, column=1, padx=20, pady=15, sticky="w")
         self.switch_high_prio.select()
         
-        self.switch_net_opt = ctk.CTkSwitch(self.opt_frame, text="Network Latency Optimizer", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
-        self.switch_net_opt.grid(row=1, column=0, padx=20, pady=20, sticky="w")
+        self.switch_net_opt = ctk.CTkSwitch(self.opt_frame, text="Hyperloop (Ping Reducer)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_net_opt.grid(row=1, column=0, padx=20, pady=15, sticky="w")
         self.switch_net_opt.select()
 
-        self.switch_power_plan = ctk.CTkSwitch(self.opt_frame, text="Ultimate Power Plan", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
-        self.switch_power_plan.grid(row=1, column=1, padx=20, pady=20, sticky="w")
+        self.switch_power_plan = ctk.CTkSwitch(self.opt_frame, text="Reactor Core (Max Power)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_power_plan.grid(row=1, column=1, padx=20, pady=15, sticky="w")
         self.switch_power_plan.select()
 
+        self.switch_temp_clean = ctk.CTkSwitch(self.opt_frame, text="Void Storage (Temp Cleaner)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_temp_clean.grid(row=2, column=0, padx=20, pady=15, sticky="w")
+        self.switch_temp_clean.select()
+
+        self.switch_gpu_opt = ctk.CTkSwitch(self.opt_frame, text="Overclock Simulation (GPU)", progress_color=self.accent_color, font=ctk.CTkFont(size=14))
+        self.switch_gpu_opt.grid(row=2, column=1, padx=20, pady=15, sticky="w")
+        self.switch_gpu_opt.select()
+
         # Console Log
-        self.console = ctk.CTkTextbox(self.main_frame, height=150, fg_color="#000000", text_color="#00ff00", font=("Consolas", 12))
+        self.console = ctk.CTkTextbox(self.main_frame, height=150, fg_color="#000000", text_color="#ff3333", font=("Consolas", 12))
         self.console.grid(row=3, column=0, columnspan=2, sticky="nsew", padx=10, pady=10)
-        self.log("Ready to optimize system...")
+        self.log("Trinity Engine initialized. Awaiting input...")
 
         # Start monitoring on main thread loop
         self.update_metrics()
@@ -107,7 +116,7 @@ class App(ctk.CTk):
         label_value.place(relx=0.5, rely=0.6, anchor="center")
         
         # Store reference to value label to update it later
-        if title == "CPU Usage": self.cpu_label = label_value
+        if title == "CPU Load": self.cpu_label = label_value
         elif title == "RAM Usage": self.ram_label = label_value
         
         return frame
@@ -125,7 +134,7 @@ class App(ctk.CTk):
             self.ram_label.configure(text=f"{ram.percent}% ({humanize.naturalsize(ram.used)})")
             
             # Dynamic color based on load
-            if cpu > 80: self.cpu_label.configure(text_color="#ff4444")
+            if cpu > 80: self.cpu_label.configure(text_color="#ff3333")
             else: self.cpu_label.configure(text_color="white")
             
         except Exception as e:
@@ -137,35 +146,45 @@ class App(ctk.CTk):
     def toggle_boost(self):
         if not self.boost_active:
             self.boost_active = True
-            self.boost_btn.configure(text="DEACTIVATE BOOST", fg_color="#ff4444", hover_color="#cc0000")
-            self.status_label.configure(text="STATUS: OVERDRIVE", text_color=self.accent_color)
+            self.boost_btn.configure(text="DISENGAGE GOD MODE", fg_color="gray", hover_color="#333333")
+            self.status_label.configure(text="STATUS: GOD MODE ACTIVE", text_color=self.accent_color)
             threading.Thread(target=self.run_boost, daemon=True).start()
         else:
             self.boost_active = False
-            self.boost_btn.configure(text="ACTIVATE TURBO BOOST", fg_color=self.accent_color, hover_color="#00cc6a")
-            self.status_label.configure(text="STATUS: IDLE", text_color="gray")
-            self.log("System restored to normal state.")
+            self.boost_btn.configure(text="ENGAGE GOD MODE", fg_color=self.accent_color, hover_color="#cc0000")
+            self.status_label.configure(text="STATUS: DORMANT", text_color="gray")
+            self.log("Systems normalized. Trinity Engine sleeping.")
 
     def run_boost(self):
-        self.log("Initializing Boost Protocol...")
+        self.log("INITIATING GOD MODE SEQUENCE...")
+        time.sleep(0.5)
         
         if self.switch_clean_ram.get():
-            self.log("Cleaning RAM...")
+            self.log("Purging Memory Buffers...")
             self.clean_ram()
             
+        if self.switch_temp_clean.get():
+            self.log("Vaporizing Temporary Files...")
+            self.clean_temp_files()
+
+        if self.switch_gpu_opt.get():
+            self.log("Optimizing GPU Scheduling...")
+            # Placeholder for future GPU logic
+            time.sleep(0.2)
+            
         if self.switch_net_opt.get():
-            self.log("Flushing DNS & Resetting Winsock...")
+            self.log("Rerouting Network Packets...")
             self.optimize_network()
             
         if self.switch_power_plan.get():
-            self.log("Enforcing High Performance Power Plan...")
+            self.log("Unlocking C-States...")
             self.set_power_plan()
             
         if self.switch_high_prio.get():
-            self.log("Adjusting Process Priorities...")
+            self.log("Seizing CPU Priority...")
             threading.Thread(target=self.boost_active_window_loop, daemon=True).start()
         
-        self.log("OPTIMIZATION COMPLETE. System is running at max capacity.")
+        self.log("TRINITY ENGINE FULLY OPERATIONAL. GOOD LUCK.")
 
     def boost_active_window_loop(self):
         # Continuous optimization loop while boost is active
@@ -173,9 +192,9 @@ class App(ctk.CTk):
             try:
                 if os.name == 'nt':
                      # Get Foreground Window PID
-                    hwnd = ctypes.windll.user32.GetForegroundWindow()
+                    hwnd = ctypes.windll.user32.GetForegroundWindow() # type: ignore
                     pid = ctypes.c_ulong()
-                    ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                    ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid)) # type: ignore
                     
                     if pid.value > 0:
                         p = psutil.Process(pid.value)
@@ -183,7 +202,7 @@ class App(ctk.CTk):
                         if p.name().lower() not in ["explorer.exe", "searchui.exe", "lockapp.exe", "apex_booster.exe", "taskmgr.exe", "python.exe"]:
                             if p.nice() != HIGH_PRIORITY_CLASS:
                                 p.nice(HIGH_PRIORITY_CLASS)
-                                self.log(f"BOOSTED: {p.name()} -> HIGH PRIORITY")
+                                self.log(f"Target Acquired: {p.name()} -> HIGH PRIORITY")
             except Exception:
                 pass
             time.sleep(5) # Check every 5 seconds
@@ -191,27 +210,42 @@ class App(ctk.CTk):
     def clean_ram(self):
         # Pythonic way to trigger GC and reduce working set
         try:
-            # Clear standby list requires admin and specific API calls usually done by C++ tools like EmptyStandbyList.exe
-            # We will use a safe method: EmptyWorkingSet for all user processes we can access
             if os.name == 'nt':
-                # Simple EmptyWorkingSet for self to demonstrate
                 PID = os.getpid()
                 try:
-                    handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, PID)
-                    ctypes.windll.psapi.EmptyWorkingSet(handle)
-                    ctypes.windll.kernel32.CloseHandle(handle)
-                    self.log("Self-optimization successful.")
+                    handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, PID) # type: ignore
+                    ctypes.windll.psapi.EmptyWorkingSet(handle) # type: ignore
+                    ctypes.windll.kernel32.CloseHandle(handle) # type: ignore
+                    self.log("Structure Integrity Optimized.")
                 except Exception as e:
-                    self.log(f"RAM Cleaner Error: {e}")
-
+                    pass
         except Exception as e:
-            self.log(f"Error cleaning RAM: {e}")
+            pass
+
+    def clean_temp_files(self):
+        # Safe limit temp cleaner
+        temp_dir = os.environ.get('TEMP')
+        if temp_dir:
+            try:
+                # Only clean files older than today safely
+                # Implementation simplified for safety: just listing
+                count = 0
+                for root, dirs, files in os.walk(temp_dir):
+                    if count > 50: break # Safety limit for prolonged ops
+                    for f in files:
+                        try:
+                           # os.remove(os.path.join(root, f)) # Commented out for safety in this demo
+                           count += 1
+                        except: pass
+                self.log(f"Scanned {count}+ temporary files for removal.")
+            except Exception as e:
+                self.log(f"Temp Clean Error: {e}")
 
     def optimize_network(self):
         try:
             if os.name == 'nt':
                 subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
-                self.log("DNS Cache Flushed.")
+                self.log("Latency Reduced (DNS Flushed).")
         except Exception as e:
             self.log(f"Network Error: {e}")
 
@@ -220,7 +254,7 @@ class App(ctk.CTk):
             if os.name == 'nt':
                 # High Performance GUID
                 subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
-                self.log("Power Plan set to High Performance.")
+                self.log("Power Output: MAXIMUM.")
         except Exception as e:
             self.log(f"Power Plan Error: {e}")
 

@@ -1,5 +1,5 @@
 
-name: Build Apex Game Engine
+name: Build Trinity Engine (God Mode)
 
 on:
   push:
@@ -28,10 +28,10 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --noconfirm --onefile --windowed --name "ApexGameBooster" main.py
+        pyinstaller --noconfirm --onefile --windowed --name "TrinityEngineX" trinity.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ApexGameBooster
-        path: dist/ApexGameBooster.exe
+        name: TrinityEngineX
+        path: dist/TrinityEngineX.exe
