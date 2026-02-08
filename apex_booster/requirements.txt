@@ -1,0 +1,6 @@
+customtkinter
+psutil
+humanize
+wmi
+Pillow
+pywin32
