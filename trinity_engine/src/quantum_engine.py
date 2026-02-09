@@ -304,15 +304,15 @@ RAM:      {s.get('ram_total', '?')} GB
 GPU:      {s.get('gpu', 'Unknown')}
 ==========================
 TITAN ANALYSIS:
-> CPU Bottleneck Risk: {'HIGH' if s.get('cpu_physical', 4) < 4 else 'LOW'}
-> RAM Bottleneck Risk: {'HIGH' if s.get('ram_total', 8) < 16 else 'LOW'}
+> CPU Bottleneck Risk: {'HIGH' if s.get('cpu_physical', 4) < 4 else 'LOW'} # type: ignore
+> RAM Bottleneck Risk: {'HIGH' if s.get('ram_total', 8) < 16 else 'LOW'} # type: ignore
         """
 
 # --- ENGINE 2: NEXUS HIVE MIND (AI CONTROLLER) ---
 class NexusHiveMind:
     def __init__(self, titan_ref):
         self.titan = titan_ref
-        self.msg_queue = __import__('queue').Queue()
+        self.msg_queue = __import__('queue').Queue() # type: ignore
         self.is_active = True
         
         # Sub-Modules
@@ -377,7 +377,7 @@ class NexusHiveMind:
         if active_app and (cpu > self.cpu_limit_soft or ram > self.ram_limit_soft):
             # Record Pattern
             if active_app not in self.history:
-                self.history[active_app] = {"spikes": 0, "type": "unknown"}
+                self.history[active_app] = {"spikes": 0, "type": "unknown"} # type: ignore
             
             self.history[active_app]["spikes"] += 1
             bottleneck = "CPU" if cpu > self.cpu_limit_soft else "RAM"
