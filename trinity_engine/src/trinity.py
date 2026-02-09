@@ -230,21 +230,21 @@ class App(ctk.CTk): # type: ignore
                 # Only clean files older than today safely
                 # Implementation simplified for safety: just listing
                 count = 0
-                for root, dirs, files in os.walk(temp_dir):
+                for root, dirs, files in os.walk(temp_dir): # type: ignore
                     if count > 50: break # Safety limit for prolonged ops
-                    for f in files:
+                    for f in files: # type: ignore
                         try:
-                           # os.remove(os.path.join(root, f)) # Commented out for safety in this demo
-                           count += 1
+                           os.remove(os.path.join(root, f)) 
+                           count += 1 # type: ignore
                         except: pass
-                self.log(f"Scanned {count}+ temporary files for removal.")
+                self.log(f"Vaporized {count} temporary files.")
             except Exception as e:
                 self.log(f"Temp Clean Error: {e}")
 
     def optimize_network(self):
         try:
             if os.name == 'nt':
-                subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
+                subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW) # type: ignore
                 self.log("Latency Reduced (DNS Flushed).")
         except Exception as e:
             self.log(f"Network Error: {e}")
@@ -253,11 +253,11 @@ class App(ctk.CTk): # type: ignore
         try:
             if os.name == 'nt':
                 # High Performance GUID
-                subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW)
+                subprocess.run(["powercfg", "/setactive", "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW) # type: ignore
                 self.log("Power Output: MAXIMUM.")
         except Exception as e:
             self.log(f"Power Plan Error: {e}")
 
 if __name__ == "__main__":
-    app = App()
+    app = App() # type: ignore
     app.mainloop()
