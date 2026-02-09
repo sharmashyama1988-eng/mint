@@ -4,3 +4,4 @@ humanize
 wmi
 Pillow
 pywin32
+pystray

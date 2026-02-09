@@ -1,29 +1,35 @@
-# PROJECT GEMINI - TRIPLE ENGINE SYSTEM
+# QUANTUM NEXUS - HYPERVISOR
 
 <div align="center">
-  <h3>APEX + TRINITY + NEXUS</h3>
-  <p>The first autonomous AI-powered game optimization engine.</p>
+  <h3>APEX + TRINITY + NEXUS + TITAN</h3>
+  <p>The first hardware-aware, autonomous AI optimization suite.</p>
 </div>
 
 ## 🚀 Engine Cores
 
-### 1. APEX ENGINE (Stable)
-- **Use Case**: Everyday gaming, casual usage.
-- **Features**: Smart RAM Cleaning, High Priority Boost.
+### 1. TITAN HARDWARE SCANNER
+- **Function**: Deep scans your CPU, GPU, and RAM.
+- **Purpose**: Creates a "Hardware Profile" that calibrates the AI engines.
+- **Example**: If you have 8GB RAM, Titan forces Nexus to be "Aggressive". If 32GB, it sets "Chill Mode".
 
-### 2. TRINITY ENGINE (God Mode)
-- **Use Case**: Cyberpunk 2077, Rendering, Heavy Loads.
-- **Features**: Flux Capacitor (Aggressive RAM), Neural Priority (Realtime), Void Storage (Temp Clean).
+### 2. NEXUS HIVE MIND (The AI Swarm)
+Nexus controls 3 Sub-AIs:
+- **CORTEX**: Pattern Recognition. Memorizes which games cause lag.
+- **SENTINEL**: Real-time Defense. Detects spikes and kills background bloat instantly.
+- **ORACLE**: Prediction. Pre-loads resources before you even launch a heavy game.
 
-### 3. NEXUS AI (Autonomous)
-- **Use Case**: Set and forget.
-- **Function**: Reads user activity, detects lag spikes (CPU/RAM), records bottlenecks to `nexus_memory.json`, and automatically applies fixes based on past history.
+### 3. APEX & TRINITY (The Muscle)
+- **Apex**: Stable Engine for casual use.
+- **Trinity**: "God Mode" for heavy gaming.
 
 ## 🛠️ Installation
 
 ### Option 1: Build Local
 1. Run `build.bat`
-2. Open `dist/ProjectGemini.exe`
+2. Open `dist/QuantumNexus.exe`
 
 ### Option 2: Run Source
-1. Run `python trinity.py`
+1. Run `python quantum_engine.py`
+
+## 👻 Background Mode
+The app now minimizes to the System Tray. Right-click the icon to Exit completely.
