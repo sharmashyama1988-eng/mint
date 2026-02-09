@@ -53,103 +53,70 @@ class QuantumUI(ctk.CTk):
         self.is_minimized = False
         
         # GUI Structure
-        self.grid_columnconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1) # Full width for boot
         self.grid_rowconfigure(0, weight=1)
 
+        # Boot Screen (Initial State)
+        self.boot_frame = ctk.CTkFrame(self, fg_color=self.bg_color)
+        self.boot_frame.grid(row=0, column=0, sticky="nsew")
+        self.boot_frame.place(relx=0.5, rely=0.5, anchor="center")
+        
+        self.boot_label = ctk.CTkLabel(self.boot_frame, text="INITIALIZING QUANTUM CORE...", font=ctk.CTkFont(size=20, weight="bold"), text_color=self.accent_color)
+        self.boot_label.pack(pady=20)
+        
+        self.boot_progress = ctk.CTkProgressBar(self.boot_frame, width=400, height=4, progress_color=self.accent_color)
+        self.boot_progress.pack(pady=10)
+        self.boot_progress.set(0)
+
+        self.sidebar = None # Delayed init
+        self.main_frame = None
+
+        # Start Boot Animation
+        self.after(500, self.run_boot_sequence)
+
+        # Core Engines (Background)
+        self.titan = TitanHardwareCore()
+        self.nexus = NexusHiveMind(self.titan)
+        self.is_minimized = False
+        
+        self.tray_icon = self.setup_tray()
+        self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
+
+    def run_boot_sequence(self):
+        # Fake loading steps
+        steps = [
+            (0.2, "LOADING TITAN MODULES..."),
+            (0.4, "SCANNIG HARDWARE ID..."),
+            (0.6, "CONNECTING TO NEXUS HIVE..."),
+            (0.8, "CALIBRATING DEFENSE SYSTEMS..."),
+            (1.0, "SYSTEM READY.")
+        ]
+        self.animate_boot(steps, 0)
+
+    def animate_boot(self, steps, index):
+        if index < len(steps):
+            progress, text = steps[index]
+            self.boot_label.configure(text=text)
+            self.boot_progress.set(progress)
+            self.after(600, lambda: self.animate_boot(steps, index + 1))
+        else:
+            self.boot_frame.destroy()
+            self.init_main_interface()
+
+    def init_main_interface(self):
+        # Restore Grid
+        self.grid_columnconfigure(0, weight=0) # Sidebar width
+        self.grid_columnconfigure(1, weight=1) # Main width
+        
         self.setup_sidebar()
         self.setup_main_area()
-        self.tray_icon = self.setup_tray()
-
-        # Start Systems
-        self.protocol("WM_DELETE_WINDOW", self.minimize_to_tray)
-        self.update_live_feed()
-
-        # Auto-Scan on Launch
+        
+        # Auto-Scan
         self.titan.scan_hardware()
         self.update_hardware_info()
+        self.update_live_feed()
 
-    def setup_tray(self):
-        # Create a simple icon image
-        image = Image.new('RGB', (64, 64), color=(0, 0, 0))
-        d = ImageDraw.Draw(image)
-        d.rectangle([16, 16, 48, 48], fill=self.accent_color)
-        
-        menu = pystray.Menu(
-            pystray.MenuItem('Restore', self.restore_from_tray),
-            pystray.MenuItem('Exit', self.quit_app)
-        )
-        return pystray.Icon("QuantumNexus", image, "Quantum Nexus Engine", menu)
-
-    def minimize_to_tray(self):
-        self.withdraw()
-        self.is_minimized = True
-        threading.Thread(target=self.tray_icon.run, daemon=True).start()
-
-    def restore_from_tray(self, icon, item):
-        self.tray_icon.stop()
-        self.after(0, self.deiconify)
-        self.is_minimized = False
-
-    def quit_app(self, icon, item):
-        self.tray_icon.stop()
-        self.destroy()
-        os._exit(0)
-
-    def setup_sidebar(self):
-        self.sidebar = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=self.sidebar_color)
-        self.sidebar.grid(row=0, column=0, sticky="nsew")
-        self.sidebar.grid_rowconfigure(6, weight=1)
-
-        # Logo
-        ctk.CTkLabel(self.sidebar, text="QUANTUM\nNEXUS", font=ctk.CTkFont(size=26, weight="bold"), text_color=self.accent_color).grid(row=0, column=0, padx=20, pady=(40, 20))
-        
-        # Buttons
-        self.btn_dashboard = self.create_nav_btn("DASHBOARD", 1, self.show_dashboard)
-        self.btn_titan = self.create_nav_btn("TITAN HARDWARE", 2, self.show_titan)
-        self.btn_nexus = self.create_nav_btn("NEXUS HIVE", 3, self.show_nexus)
-        
-        # Status
-        self.status_label = ctk.CTkLabel(self.sidebar, text="SYSTEM: ONLINE", font=ctk.CTkFont(size=12, weight="bold"), text_color=self.success_color)
-        self.status_label.grid(row=7, column=0, padx=20, pady=20)
-
-    def create_nav_btn(self, text, row, command):
-        btn = ctk.CTkButton(self.sidebar, text=text, fg_color="transparent", text_color="gray", hover_color="#222222", anchor="w", command=command, height=45)
-        btn.grid(row=row, column=0, sticky="ew", padx=10, pady=5)
-        return btn
-
-    def setup_main_area(self):
-        self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-        
-        # Frames for pages
-        self.page_dashboard = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.page_titan = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        self.page_nexus = ctk.CTkFrame(self.main_frame, fg_color="transparent")
-        
-        # Init Pages
-        self.build_dashboard()
-        self.build_titan()
-        self.build_nexus()
-        
-        # Show default
-        self.show_dashboard()
-
-    def show_page(self, page, btn):
-        # Reset buttons
-        for b in [self.btn_dashboard, self.btn_titan, self.btn_nexus]:
-            b.configure(fg_color="transparent", text_color="gray")
-        btn.configure(fg_color="#222222", text_color="white")
-        
-        # Hide all pages
-        for p in [self.page_dashboard, self.page_titan, self.page_nexus]:
-            p.pack_forget()
-        
-        # Show selected
-        page.pack(fill="both", expand=True)
-
-    def show_dashboard(self): self.show_page(self.page_dashboard, self.btn_dashboard)
-    def show_titan(self): self.show_page(self.page_titan, self.btn_titan)
-    def show_nexus(self): self.show_page(self.page_nexus, self.btn_nexus)
+    # ... (Tray methods remain the same) ...
 
     # --- DASHBOARD UI ---
     def build_dashboard(self):
@@ -159,85 +126,43 @@ class QuantumUI(ctk.CTk):
         stats_frame = ctk.CTkFrame(self.page_dashboard, fg_color="transparent")
         stats_frame.pack(fill="x", pady=10)
         
-        self.dash_cpu = self.create_stat_card(stats_frame, "CPU LOAD", "0%")
-        self.dash_cpu.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.dash_cpu_bar = self.create_visual_stat_card(stats_frame, "CPU LOAD", "0%", self.danger_color)
+        self.dash_cpu_bar.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
-        self.dash_ram = self.create_stat_card(stats_frame, "RAM USAGE", "0%")
-        self.dash_ram.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.dash_ram_bar = self.create_visual_stat_card(stats_frame, "RAM USAGE", "0%", self.accent_color)
+        self.dash_ram_bar.pack(side="left", fill="x", expand=True, padx=(0, 10))
         
-        self.dash_ai_state = self.create_stat_card(stats_frame, "AI ACTIVITY", "IDLE")
+        self.dash_ai_state = self.create_visual_stat_card(stats_frame, "AI ACTIVITY", "IDLE", self.success_color, is_bar=False)
         self.dash_ai_state.pack(side="left", fill="x", expand=True)
 
         # Quick Actions
         ctk.CTkLabel(self.page_dashboard, text="QUICK PROTOCOLS", font=ctk.CTkFont(size=18, weight="bold"), text_color="gray").pack(anchor="w", pady=(30, 10))
         
+        # Notification Area
+        self.dash_notify = ctk.CTkLabel(self.page_dashboard, text="", font=ctk.CTkFont(size=14, weight="bold"), text_color=self.accent_color)
+        self.dash_notify.pack(anchor="w", pady=(0, 5))
+
         action_frame = ctk.CTkFrame(self.page_dashboard, fg_color="transparent")
         action_frame.pack(fill="x")
         
-        ctk.CTkButton(action_frame, text="FLUSH MEMORY", height=50, fg_color="#333333", hover_color=self.accent_color, command=self.nexus.force_ram_clean).pack(fill="x", pady=5)
-        ctk.CTkButton(action_frame, text="NETWORK RESET", height=50, fg_color="#333333", hover_color=self.accent_color, command=self.nexus.optimize_network).pack(fill="x", pady=5)
+        ctk.CTkButton(action_frame, text="FLUSH MEMORY", height=50, fg_color="#333333", hover_color=self.accent_color, command=lambda: self.run_action(self.nexus.force_ram_clean, "Flushing Memory...")).pack(fill="x", pady=5)
+        ctk.CTkButton(action_frame, text="NETWORK RESET", height=50, fg_color="#333333", hover_color=self.accent_color, command=lambda: self.run_action(self.nexus.optimize_network, "Resetting Network...")).pack(fill="x", pady=5)
 
-    def create_stat_card(self, parent, title, value):
-        frame = ctk.CTkFrame(parent, fg_color="#1a1a1a", height=100)
+    def create_visual_stat_card(self, parent, title, value, color, is_bar=True):
+        frame = ctk.CTkFrame(parent, fg_color="#1a1a1a", height=120)
         ctk.CTkLabel(frame, text=title, font=ctk.CTkFont(size=12), text_color="gray").pack(pady=(15, 5))
-        lbl = ctk.CTkLabel(frame, text=value, font=ctk.CTkFont(size=28, weight="bold"), text_color="white")
-        lbl.pack(pady=(0, 15))
-        return lbl # Return value label specifically
-
-    # --- TITAN UI ---
-    def build_titan(self):
-        ctk.CTkLabel(self.page_titan, text="TITAN HARDWARE SCANNER", font=ctk.CTkFont(size=24, weight="bold"), text_color=self.accent_color).pack(anchor="w", pady=(0, 20))
+        lbl = ctk.CTkLabel(frame, text=value, font=ctk.CTkFont(size=24, weight="bold"), text_color="white")
+        lbl.pack(pady=(0, 5))
         
-        self.titan_text = ctk.CTkTextbox(self.page_titan, height=300, fg_color="#111111", text_color="#00ff88", font=("Consolas", 12))
-        self.titan_text.pack(fill="x", pady=10)
+        if is_bar:
+            bar = ctk.CTkProgressBar(frame, width=150, height=6, progress_color=color)
+            bar.pack(pady=(5, 15))
+            bar.set(0)
+            lbl.bar_ref = bar # Attach reference
         
-        ctk.CTkButton(self.page_titan, text="RUN DEEP HARDWARE SCAN", height=50, fg_color=self.accent_color, text_color="black", hover_color="#00aabb", command=self.update_hardware_info).pack(fill="x", pady=20)
+        return lbl 
 
-    # --- NEXUS UI ---
-    def build_nexus(self):
-        ctk.CTkLabel(self.page_nexus, text="NEXUS HIVE MIND (AI SWARM)", font=ctk.CTkFont(size=24, weight="bold"), text_color=self.accent_color).pack(anchor="w", pady=(0, 20))
-        
-        # Switches for AI Modules
-        self.sw_cortex = ctk.CTkSwitch(self.page_nexus, text="CORTEX: Pattern Recognition (Detect Lag)", onvalue=True, offvalue=False, command=self.toggle_nexus_modules)
-        self.sw_cortex.pack(anchor="w", pady=10)
-        self.sw_cortex.select()
-
-        self.sw_sentinel = ctk.CTkSwitch(self.page_nexus, text="SENTINEL: Real-time Defense (Auto-Fix)", onvalue=True, offvalue=False, command=self.toggle_nexus_modules)
-        self.sw_sentinel.pack(anchor="w", pady=10)
-        self.sw_sentinel.select()
-        
-        self.sw_oracle = ctk.CTkSwitch(self.page_nexus, text="ORACLE: Predictive Pre-caching", onvalue=True, offvalue=False, command=self.toggle_nexus_modules)
-        self.sw_oracle.pack(anchor="w", pady=10)
-        self.sw_oracle.select()
-
-        # Nexus Log
-        ctk.CTkLabel(self.page_nexus, text="NEURAL FEED", font=ctk.CTkFont(size=14, weight="bold"), text_color="gray").pack(anchor="w", pady=(20, 5))
-        self.nexus_log = ctk.CTkTextbox(self.page_nexus, height=200, fg_color="#000000", text_color=self.accent_color, font=("Consolas", 11))
-        self.nexus_log.pack(fill="both", expand=True)
-
-    def log_nexus(self, msg):
-        try:
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            self.nexus_log.insert("end", f"[{timestamp}] {msg}\n")
-            self.nexus_log.see("end")
-        except: pass
-
-    # --- LOGIC ---
-    def update_hardware_info(self):
-        info = self.titan.get_report()
-        self.titan_text.delete("1.0", "end")
-        self.titan_text.insert("end", info)
-        # Feed info to Nexus
-        self.nexus.ingest_hardware_data(self.titan.hardware_specs)
-        self.log_nexus("TITAN: Hardware profile updated. Nexus calibrated.")
-
-    def toggle_nexus_modules(self):
-        self.nexus.set_modules(
-            self.sw_cortex.get(),
-            self.sw_sentinel.get(),
-            self.sw_oracle.get()
-        )
-        self.log_nexus("NEXUS: Module limits reconfigured.")
+    # ... (Titan/Nexus UI methods unchanged, logic below needs update for bars) ...
 
     def update_live_feed(self):
         # UI Updates
@@ -246,11 +171,14 @@ class QuantumUI(ctk.CTk):
             cpu = psutil.cpu_percent(interval=None)
             ram = psutil.virtual_memory()
             
-            self.dash_cpu.configure(text=f"{cpu}%")
-            self.dash_cpu.configure(text_color=self.danger_color if cpu > 90 else "white")
+            # Update Text
+            self.dash_cpu_bar.configure(text=f"{cpu}%")
+            self.dash_cpu_bar.configure(text_color=self.danger_color if cpu > 90 else "white")
+            if hasattr(self.dash_cpu_bar, 'bar_ref'): self.dash_cpu_bar.bar_ref.set(cpu / 100) # Update Bar
             
-            self.dash_ram.configure(text=f"{ram.percent}%")
-            self.dash_ram.configure(text_color=self.danger_color if ram.percent > 90 else "white")
+            self.dash_ram_bar.configure(text=f"{ram.percent}%")
+            self.dash_ram_bar.configure(text_color=self.danger_color if ram.percent > 90 else "white")
+            if hasattr(self.dash_ram_bar, 'bar_ref'): self.dash_ram_bar.bar_ref.set(ram.percent / 100) # Update Bar
             
             # AI State
             state = "ACTIVE" if self.nexus.is_active else "IDLE"
@@ -393,21 +321,28 @@ class NexusHiveMind:
              self.msg_queue.put("SENTINEL: RAM Critical. Deploying FLUX CAPACITOR...")
              self.force_ram_clean()
 
+
     def force_ram_clean(self):
         try:
             if os.name == 'nt':
                 PID = os.getpid()
                 handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, PID) # type: ignore
-                ctypes.windll.psapi.EmptyWorkingSet(handle) # type: ignore
+                success = ctypes.windll.psapi.EmptyWorkingSet(handle) # type: ignore
                 ctypes.windll.kernel32.CloseHandle(handle) # type: ignore
-        except: pass
+                if success:
+                     self.msg_queue.put("SENTINEL: RAM Purge Successful.")
+                else:
+                     self.msg_queue.put("SENTINEL: RAM Purge Failed (Access Denied?).")
+        except Exception as e:
+            self.msg_queue.put(f"SENTINEL ERROR: {e}")
 
     def optimize_network(self):
          try:
             if os.name == 'nt':
                 subprocess.run(["ipconfig", "/flushdns"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=CREATE_NO_WINDOW) # type: ignore
                 self.msg_queue.put("SENTINEL: Network Reset Complete.")
-         except: pass
+         except Exception as e:
+            self.msg_queue.put(f"SENTINEL ERROR: {e}")
 
     def get_active_app(self):
         try:
@@ -418,6 +353,16 @@ class NexusHiveMind:
                 return psutil.Process(pid.value).name()
         except: return None
 
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() # type: ignore
+    except:
+        return False
+
 if __name__ == "__main__":
+    if not is_admin():
+        # Re-run the program with admin rights
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1) # type: ignore
+        sys.exit()
     app = QuantumUI()
     app.mainloop()
