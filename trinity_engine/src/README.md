@@ -1,24 +1,30 @@
-# TRINITY ENGINE - GOD MODE OPTIMIZATON
+# PROJECT GEMINI - DUAL ENGINE SYSTEM
 
 <div align="center">
-  <h3>MAXIMUM SYSTEM OUTPUT ACTIVATED</h3>
-  <p>The ultimate gaming performance engine. Replaces Apex Engine.</p>
+  <h3>APEX + TRINITY = GEMINI</h3>
+  <p>Two powerful engines in one application.</p>
 </div>
 
-## 🚀 GOD MODE Features
+## 🚀 Features
 
-- **Flux Capacitor (RAM Cleaner)**: Aggressively purges memory buffers and standby lists.
-- **Neural Priority (CPU Focus)**: Seizes CPU cycles for your active game.
-- **Hyperloop (Ping Reducer)**: Reroutes network packets by flushing DNS and optimizing Winsock.
-- **Reactor Core (Power)**: Unlocks full CPU power states.
-- **Void Storage (Temp Cleaner)**: Vaporizes useless temporary files to free up SSD speed.
-- **Overclock Simulation**: Prepares simplified GPU scheduling (experimental).
+### Core 1: APEX ENGINE (Stable)
+- **Smart RAM Cleaning**: Standard memory optimization.
+- **Game Priority Boost**: Sets game processes to "High Priority".
+- **Balanced Power**: Efficient performance.
+- **Theme**: Cyber Green
+
+### Core 2: TRINITY ENGINE (God Mode)
+- **Flux Capacitor**: Aggressive memory purging.
+- **Neural Priority**: Sets game processes to "Realtime Priority".
+- **Hyperloop**: Zero-latency network optimization.
+- **Void Storage**: Deletes temporary files for disk speed.
+- **Theme**: Demon Red
 
 ## 🛠️ Installation
 
-### local
+### Option 1: Build Local
 1. Run `build.bat`
-2. Open `dist/TrinityEngineX.exe`
+2. Open `dist/GeminiOptimizer.exe`
 
-### or
+### Option 2: Run Source
 1. Run `python trinity.py`

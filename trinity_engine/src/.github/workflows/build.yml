@@ -1,5 +1,5 @@
 
-name: Build Trinity Engine (God Mode)
+name: Build Gemini Optimizer
 
 on:
   push:
@@ -28,10 +28,10 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --noconfirm --onefile --windowed --name "TrinityEngineX" trinity.py
+        pyinstaller --noconfirm --onefile --windowed --name "GeminiOptimizer" trinity.py
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: TrinityEngineX
-        path: dist/TrinityEngineX.exe
+        name: GeminiOptimizer
+        path: dist/GeminiOptimizer.exe
